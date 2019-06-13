@@ -1,4 +1,6 @@
-﻿using System;
+﻿using EdpConsole.Connectors.Usb;
+using EdpConsole.Core;
+using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Text;
@@ -11,8 +13,6 @@ namespace EdpConsole.Connectors
 
         void Open();
 
-        void SendMessage(byte[] message);
-
-        void SendMessageWithCRC(byte[] message);
+        void SendMessage(ModbusMessage message);
     }
 }
