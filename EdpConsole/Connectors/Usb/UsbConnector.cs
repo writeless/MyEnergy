@@ -30,7 +30,7 @@ namespace EdpConsole.Connectors.Usb
         private const int _headerSize = 3;
         private const int _crcSize = 2;
         private List<byte> _dataReceived = new List<byte>();
-        private MessageType _messageType = MessageType.None;
+        private ModbusMessage _request;
 
         private object lockObject = new object();
         private SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
@@ -52,6 +52,7 @@ namespace EdpConsole.Connectors.Usb
             //0x0081 Load profile -Capture period
             //0x0082 Load profile -Entries
             //0x0083 Load profile -Profile entries
+            //load first entry, and calculate how many entries exist
         }
 
         private void Open()
@@ -63,7 +64,13 @@ namespace EdpConsole.Connectors.Usb
                     Close();
                 }
 
+                //TODO: poderia ser feito um teste na conexao para ter certeza que a porta é uma comunicacao com o medidor
                 var comPort = GetUsbCOMPort();
+
+                if (comPort == null)
+                {
+                    return;
+                }
 
                 _serialPort = new SerialPort(comPort, _baudRate, _parity, _dataBits, _stopBits);
                 _serialPort.Handshake = _handshake;
@@ -94,7 +101,7 @@ namespace EdpConsole.Connectors.Usb
 
                 Console.WriteLine($"Message Sent: {message.ToHexString()}");
 
-                _messageType = message.MessageType;
+                _request = message;
                 _serialPort.Write(message.Value, 0, message.Length);
             }
             catch (Exception ex)
@@ -111,6 +118,8 @@ namespace EdpConsole.Connectors.Usb
 
             try
             {
+                //TODO: configurar retry
+
                 SendMessage(message);
 
                 return await GetDataReceivedAsync();
@@ -130,6 +139,7 @@ namespace EdpConsole.Connectors.Usb
         {
             try
             {
+                //TODO: criar um timeout
                 while (HasDataToReceive())
                 {
                     var dataSize = _serialPort.BytesToRead;
@@ -141,7 +151,7 @@ namespace EdpConsole.Connectors.Usb
                     }
                 }
 
-                return new ModbusResponse(_dataReceived);
+                return new ModbusResponse(_request, _dataReceived);
             }
             catch (Exception ex)
             {
@@ -193,7 +203,7 @@ namespace EdpConsole.Connectors.Usb
 
                     if (!HasDataToReceive())
                     {
-                        var response = new ModbusResponse(_dataReceived);
+                        var response = new ModbusResponse(_request, _dataReceived);
                         DataReceived(this, response);
                         _dataReceived = new List<byte>();
                     }

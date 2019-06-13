@@ -10,47 +10,39 @@ namespace EdpConsole.Core
 
     public class ModbusMessage
     {
-        public static ModbusMessage Clock = new ModbusMessage(MessageType.ActiveCoreFirmwareId, 0x01, 0x04, 0x00, 0x01, 0x00, 0x01);
-
-        //tem 2 bytes, o segundo tem a quantidade de registros
-        public static ModbusMessage StatusControl = new ModbusMessage(MessageType.ActiveCoreFirmwareId, 0x01, 0x04, 0x00, 0x09, 0x00, 0x01);
-
-        public static ModbusMessage ActiveCoreFirmwareId = new ModbusMessage(MessageType.ActiveCoreFirmwareId, 0x01, 0x04, 0x00, 0x04, 0x00, 0x01);
-
-        public static ModbusMessage LoadProfileConfiguredMeasurements = new ModbusMessage(MessageType.LoadProfileConfiguredMeasurements, 0x01, 0x04, 0x00, 0x80, 0x00, 0x01);
-
-        public static ModbusMessage LoadProfileTotalEntries = new ModbusMessage(MessageType.LoadProfileConfiguredMeasurements, 0x01, 0x04, 0x00, 0x83, 0x00, 0x01);
-
-        public static ModbusMessage LastLoadProfile(MeasurementType measurement)
+        public static implicit operator ModbusMessage(RegistersAddressMessage type)
         {
-            return new ModbusMessage(Enum.Parse<MessageType>(measurement.ToString()), measurement, 0x01, 0x44, 0x00, 0x06);
-            //return new ModbusMessage(Enum.Parse<MessageType>(measurement.ToString()), measurement, 0x01, 0x44, (byte)measurement, 0x01);
-        }
+            var address = (byte)0x01;
+            var functionCode = FunctionCode.ReadRegistersAddress;
+            var startingAddress = new byte[] { 0x00, (byte)type };
+            var quantityInputRegisters = new byte[] { 0x00, 0x01 };
 
-        public static ModbusMessage LoadProfile(MeasurementType measurement)
-        {
-            return new ModbusMessage(Enum.Parse<MessageType>(measurement.ToString()), measurement, 0x01, 0x45, 0x00, 0x00, 0x00, 0x00, 0x01, 0x06);
-            //return new ModbusMessage(Enum.Parse<MessageType>(measurement.ToString()), measurement, 0x01, 0x45, (byte)measurement, 0x01);
+            return new ModbusMessage(
+                functionCode,
+                type,
+                address,
+                (byte)functionCode,
+                startingAddress[0],
+                startingAddress[1],
+                quantityInputRegisters[0],
+                quantityInputRegisters[1]);
         }
 
         public byte[] Value { get; }
 
-        public MessageType MessageType { get; }
+        public FunctionCode FunctionCode { get; }
 
-        public MeasurementType Measurement { get; }
+        public RegistersAddressMessage RegistersAddressMessage { get; }
+
+        //public MeasurementType Measurement { get; }
 
         public int Length { get { return Value.Length; } }
 
-        private ModbusMessage(MessageType messageType, params byte[] message)
+        public ModbusMessage(FunctionCode functionCode, RegistersAddressMessage registersAddressMessage, params byte[] message)
         {
-            Value = message.CloneWithCRC();
-            MessageType = messageType;
-        }
-
-        private ModbusMessage(MessageType messageType, MeasurementType measurement, params byte[] message)
-            : this(messageType, message)
-        {
-            Measurement = measurement;
+            Value = message.WithCRC();
+            FunctionCode = functionCode;
+            RegistersAddressMessage = registersAddressMessage;
         }
 
         public string ToHexString()

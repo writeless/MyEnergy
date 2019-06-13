@@ -16,7 +16,9 @@ namespace EdpConsole.Core
 
         public byte[] Data { get; }
 
-        public ModbusResponse(List<byte> response)
+        public object Value { get; }
+
+        public ModbusResponse(ModbusMessage request, List<byte> response)
         {
             Address = response[0];
             FunctionCode = (FunctionCode)response[1];
@@ -26,6 +28,21 @@ namespace EdpConsole.Core
                     .Take(response.Count - 2)
                     .Skip(3)
                     .ToArray();
+
+            Value = BuildValue(request, Data);
+        }
+
+        public object BuildValue(ModbusMessage request, byte[] data)
+        {
+            switch (request.RegistersAddressMessage)
+            {
+                case RegistersAddressMessage.Clock:
+                    return data.ToDateTime();
+                default:
+                    break;
+            }
+
+            return null;
         }
 
         public override string ToString()

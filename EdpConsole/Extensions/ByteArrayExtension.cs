@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EdpConsole.Extensions
 {
     public static class ByteArrayExtension
     {
-        public static byte[] CloneWithCRC(this byte[] value)
+        public static byte[] WithCRC(this byte[] value)
         {
             var result = new byte[value.Length + 2];
             var crc16 = 0xFFFF;
@@ -53,6 +54,40 @@ namespace EdpConsole.Extensions
             }
 
             return hex.ToString();
+        }
+
+        public static DateTime ToDateTime(this byte[] bytes)
+        {
+            var year = bytes.ToInt(0, 2);
+            var month = (int)bytes[2];
+            var day = (int)bytes[3];
+            var hour = (int)bytes[5];
+            var minute = (int)bytes[6];
+            var second = (int)bytes[7];
+
+            return new DateTime(year, month, day, hour, minute, second);
+        }
+
+        public static int ToInt(this byte[] bytes, int start, int end)
+        {
+            if (end - start == 1)
+            {
+                return (int)bytes.Skip(start).Take(end).First();
+            }
+
+            var data = bytes.Skip(start).Take(end).ToArray();
+
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+
+            if (data.Length == 2)
+            {
+                return BitConverter.ToInt16(data, 0);
+            }
+            else
+            {
+                return BitConverter.ToInt32(data, 0);
+            }
         }
     }
 }

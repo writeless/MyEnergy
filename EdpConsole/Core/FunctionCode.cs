@@ -6,7 +6,8 @@ namespace EdpConsole.Core
 {
     public enum FunctionCode : byte
     {
-        ReadLoadProfileConfiguredMeasurements = 0x04,
-        ReadLastLoadProfileEntries = 0x44,        ReadLoadProfileEntries = 0x45,
+        None = 0x00,
+        ReadRegistersAddress = 0x04,
+        ReadLastEntries = 0x44,        ReadEntries = 0x45,
     }
 }

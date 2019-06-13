@@ -68,6 +68,7 @@ namespace EdpConsole
                 //0x07 0xe3 0x06 0x0d 0x04 0x00 0x0f 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
                 //0x07 0xe3 0x06 0x0d 0x04 0x00 0x00 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 
+                //Clock                                                       ARM  +A                  -A                  +Ri                 +Rc                 -Ri                 +Rc                  
                 //0x07 0xe3 0x05 0x15 0x02 0x10 0x1e 0x00 0x00 0x00 0x3c 0x80 0x0c 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
                 //0x07 0xe3 0x05 0x15 0x02 0x10 0x2d 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
                 //0x07 0xe3 0x05 0x15 0x02 0x11 0x00 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
@@ -75,7 +76,7 @@ namespace EdpConsole
                 //0x07 0xe3 0x05 0x15 0x02 0x11 0x1e 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
                 //0x07 0xe3 0x05 0x15 0x02 0x11 0x2d 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 
-
+                //T1 T2 T3 Total
 
                 //03 - value
                 var message = new byte[] { 0x01, 0x44, 0x03, 0x01 };
@@ -100,18 +101,45 @@ namespace EdpConsole
                     //conn.SendMessage(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA));
                     //conn.SendMessage(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA));
 
-                    var response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
-                    Console.WriteLine($"B Received: {response}");
+                    //var response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
+                    //Console.WriteLine($"B Received: {response}");
 
-                    response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
-                    Console.WriteLine($"B Received: {response}");
+                    //response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
+                    //Console.WriteLine($"B Received: {response}");
 
-                    response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
-                    Console.WriteLine($"B Received: {response}");
+                    //response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
+                    //Console.WriteLine($"B Received: {response}");
 
-                    response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
-                    Console.WriteLine($"B Received: {response}");
-                }                
+                    var date = conn.SendMessageAsync(RegistersAddressMessage.Clock).Result;
+                    Console.WriteLine($"date: {date.Value}");
+
+                    //21/05/2019 16:30:00
+                    //var x = ModbusMessage.RegistersAddress.Clock;
+                    //var response0 = conn.SendMessageAsync(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA, 1, 1)).Result;
+                    //var initialDate = ToDate(response0.Data);
+
+                    //var response1 = conn.SendMessageAsync(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA, 1)).Result;
+                    //var endDate = ToDate(response1.Data);
+
+                    //var minutesIntervalBetweenEntries = 15;
+                    //var totalLastEntries = 6;
+                    //var totalEntries = (endDate - initialDate).TotalMinutes / minutesIntervalBetweenEntries - totalLastEntries;
+
+                    //var start = 1;// 583;//2230; //4539 registros sao feitos de 15 em 15 minutos, ele nao acessa os ultimos 6 registros
+                    //for (int i = start; i <= start + 1*6; i += 6)
+                    //{
+                    //    var response = conn.SendMessageAsync(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA, i)).Result;
+                    //    for (int j = 0; j < 6; j++)
+                    //        Console.WriteLine($"===> Received: {ToDate(response.Data.Skip(j * 37).Take(12).ToArray()).ToString("dd/MM/yyyy HH:mm:ss")} | 0x{response.Data[15 + (j * 37)]:x2} | 0x{response.Data[16 + (j * 37)]:x2}");
+                    //}
+
+                    //var response2 = conn.SendMessageAsync(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA)).Result;
+                    //for (int j = 0; j < 6; j++)
+                    //    Console.WriteLine($"===> Received: {ToDate(response2.Data.Skip(j * 37).Take(12).ToArray()).ToString("dd/MM/yyyy HH:mm:ss")} | 0x{response2.Data[15 + (j * 37)]:x2} | 0x{response2.Data[16 + (j * 37)]:x2}");
+
+                }
+
+                return;
             });
         }
 
@@ -121,28 +149,6 @@ namespace EdpConsole
             //var year = BytesToInt(response.Data, 0, 2);
 
             Console.WriteLine($"Data Received: {response}");
-        }
-
-        public static int BytesToInt(List<byte> bytes, int start, int end)
-        {
-            if (end - start == 1)
-            {
-                return (int)bytes.Skip(start).Take(end).First();
-            }
-
-            var data = bytes.Skip(start).Take(end).ToArray();
-
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(data);
-
-            if (data.Length == 2)
-            {
-                return BitConverter.ToInt16(data, 0);
-            }
-            else
-            {
-                return BitConverter.ToInt32(data, 0);
-            }     
         }
     }
 }
