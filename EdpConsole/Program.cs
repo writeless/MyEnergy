@@ -18,7 +18,11 @@ namespace EdpConsole
             //based in http://velocio.net/modbus-example/
             SendMessageTest();
 
-            Console.Read();
+            Console.ReadLine();
+
+            SendMessageTest();
+
+            Console.ReadLine();
         }
 
         private static void SendMessageTest()
@@ -84,22 +88,37 @@ namespace EdpConsole
                 //0x07 0xe3 0x06 0x0c 0x03 0x17 0x0f 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00
                 // 0x05 0x07
 
-                IConnector conn = new UsbConnector();
-                conn.DataReceived += Conn_DataReceived;
-                conn.Open();
-                //conn.SendMessage(ModbusMessage.StatusControl);
-                //conn.SendMessage(ModbusMessage.Clock);
-                //conn.SendMessage(ModbusMessage.ActiveCoreFirmwareId);
-                //conn.SendMessage(ModbusMessage.LoadProfileConfiguredMeasurements);
-                //conn.SendMessage(ModbusMessage.LoadProfileTotalEntries);
-                //conn.SendMessage(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA));
-                conn.SendMessage(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA));
-
-                while (true)
+                using (IConnector conn = new UsbConnector())
                 {
-                    Thread.Sleep(1000);
-                    Console.Write(".");
-                }
+                    //conn.DataReceived += Conn_DataReceived;
+                    conn.Open();
+                    //conn.SendMessage(ModbusMessage.StatusControl);
+                    //conn.SendMessage(ModbusMessage.Clock);
+                    //conn.SendMessage(ModbusMessage.ActiveCoreFirmwareId);
+                    //conn.SendMessage(ModbusMessage.LoadProfileConfiguredMeasurements);
+                    //conn.SendMessage(ModbusMessage.LoadProfileTotalEntries);
+                    //conn.SendMessage(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA));
+                    //conn.SendMessage(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA));
+
+                    var response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
+                    Console.WriteLine($"B Received: {response}");
+
+                    response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
+                    Console.WriteLine($"B Received: {response}");
+
+                    response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
+                    Console.WriteLine($"B Received: {response}");
+
+                    response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
+                    Console.WriteLine($"B Received: {response}");
+
+                    var count = 0;
+                    while (count++ < 5)
+                    {
+                        Thread.Sleep(1000);
+                        Console.Write(".");
+                    }
+                }                
             });
         }
 

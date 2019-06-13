@@ -14,7 +14,7 @@ namespace EdpConsole.Core
 
         public int ByteCount { get; }
 
-        public List<byte> Data { get; }
+        public byte[] Data { get; }
 
         public ModbusResponse(List<byte> response)
         {
@@ -25,12 +25,12 @@ namespace EdpConsole.Core
             Data = response
                     .Take(response.Count - 2)
                     .Skip(3)
-                    .ToList();
+                    .ToArray();
         }
 
         public override string ToString()
         {
-            return Data.ToArray().ToHexString();
+            return Data.ToHexString();
         }
     }
 }
