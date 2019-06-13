@@ -91,7 +91,7 @@ namespace EdpConsole
                 using (IConnector conn = new UsbConnector())
                 {
                     //conn.DataReceived += Conn_DataReceived;
-                    conn.Open();
+
                     //conn.SendMessage(ModbusMessage.StatusControl);
                     //conn.SendMessage(ModbusMessage.Clock);
                     //conn.SendMessage(ModbusMessage.ActiveCoreFirmwareId);
@@ -111,13 +111,6 @@ namespace EdpConsole
 
                     response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
                     Console.WriteLine($"B Received: {response}");
-
-                    var count = 0;
-                    while (count++ < 5)
-                    {
-                        Thread.Sleep(1000);
-                        Console.Write(".");
-                    }
                 }                
             });
         }

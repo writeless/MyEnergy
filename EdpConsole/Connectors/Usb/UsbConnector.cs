@@ -44,23 +44,17 @@ namespace EdpConsole.Connectors.Usb
             _dataBits = dataBits;
             _stopBits = stopBits;
             _handshake = handshake;
+
+            Open();
+
+            //TODO: fazer configuracao inicial
+            //0x0080 Load profile -Configured measurements
+            //0x0081 Load profile -Capture period
+            //0x0082 Load profile -Entries
+            //0x0083 Load profile -Profile entries
         }
 
-        public UsbConnector(
-            int baudRate,
-            Parity parity,
-            int dataBits,
-            StopBits stopBits,
-            Handshake handshake)
-        {
-            _baudRate = baudRate;
-            _parity = parity;
-            _dataBits = dataBits;
-            _stopBits = stopBits;
-            _handshake = handshake;
-        }
-
-        public void Open()
+        private void Open()
         {
             try
             {
@@ -77,13 +71,6 @@ namespace EdpConsole.Connectors.Usb
                 if (!_serialPort.IsOpen)
                 {
                     _serialPort.Open();
-
-                    //TODO: fazer configuracao inicial
-                    //0x0080 Load profile -Configured measurements
-                    //0x0081 Load profile -Capture period
-                    //0x0082 Load profile -Entries
-                    //0x0083 Load profile -Profile entries
-
                     _serialPort.DataReceived += SerialPortDataReceived;
                     Console.WriteLine($"Connection Open in Port {comPort}");
                 }
@@ -231,11 +218,13 @@ namespace EdpConsole.Connectors.Usb
             {
                 var usbPorts = new List<string>();
                 var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity");
+
                 foreach (var mo in searcher.Get())
                 {
                     var name = mo["Name"]?.ToString();
-                    //if (name != null && name.Contains("(COM"))
-                    if (name != null && name.StartsWith("USB Serial Port (COM"))
+                    var status = mo["Status"]?.ToString();
+
+                    if (name != null && name.StartsWith("USB Serial Port (COM") && status != null && status == "OK")
                     {
                         var start = name.IndexOf("(COM") + 1;
                         var end = name.IndexOf(")", start + 3);
@@ -245,7 +234,6 @@ namespace EdpConsole.Connectors.Usb
                 }
 
                 var portNames = SerialPort.GetPortNames().ToList();
-
                 var result = usbPorts.FirstOrDefault(x => portNames.Contains(x));
 
                 if (string.IsNullOrWhiteSpace(result))

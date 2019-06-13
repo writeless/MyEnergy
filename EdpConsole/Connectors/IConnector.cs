@@ -12,10 +12,6 @@ namespace EdpConsole.Connectors
     {
         event ConnectorDataReceivedEventHandler DataReceived;
 
-        void Open();
-
-        void Close();
-
         void SendMessage(ModbusMessage message);
 
         Task<ModbusResponse> SendMessageAsync(ModbusMessage message);
