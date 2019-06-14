@@ -27,6 +27,9 @@ namespace EdpConsole.Connectors.Usb
         private SerialPort _serialPort;
         private SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
 
+        public uint EntriesInUse { get; private set; }
+        public MeasurementConfiguration MeasurementConfiguration { get; private set; }
+
         public UsbConnector()
         {
             _baudRate = baudRate;
@@ -34,18 +37,9 @@ namespace EdpConsole.Connectors.Usb
             _dataBits = dataBits;
             _stopBits = stopBits;
             _handshake = handshake;
-
-            Open();
-
-            //TODO: fazer configuracao inicial
-            //0x0080 Load profile -Configured measurements
-            //0x0081 Load profile -Capture period
-            //0x0082 Load profile -Entries
-            //0x0083 Load profile -Profile entries
-            //load first entry, and calculate how many entries exist
         }
 
-        private void Open()
+        public void Open()
         {
             try
             {
@@ -77,28 +71,18 @@ namespace EdpConsole.Connectors.Usb
             }
         }
 
-        private void SendMessage(ModbusMessage message)
+        public async Task LoadConfiguration()
         {
-            if (_serialPort == null && message.Length == 0) return;
+            MeasurementConfiguration = (await ConnectorExtensions.GetRegistersAddressAsync<MeasurementConfiguration>(this, RegistersAddressMessage.ConfiguredMeasurements)).Value;
+            EntriesInUse = (await ConnectorExtensions.GetRegistersAddressAsync<uint>(this, RegistersAddressMessage.EntriesInUse)).Value;
+        }
 
-            try
-            {
-                if (!IsOpen())
-                {
-                    Open();
-                }
+        public async Task<ModbusResponse<object>> SendMessageAsync(ModbusMessage message)
+        {
+            return await SendMessageAsync<object>(message);
+        }
 
-                Console.WriteLine($"Message Sent: {message.ToHexString()}");
-
-                _serialPort.Write(message.Value, 0, message.Length);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(SendMessage)}':{ex.Message}");
-            }
-        }        
-
-        public async Task<ModbusResponse> SendMessageAsync(ModbusMessage message)
+        public async Task<ModbusResponse<TResponse>> SendMessageAsync<TResponse>(ModbusMessage message)
         {
             if (_serialPort == null && message.Length == 0) return null;
 
@@ -110,7 +94,7 @@ namespace EdpConsole.Connectors.Usb
 
                 SendMessage(message);
 
-                return await GetDataReceivedAsync(message);
+                return await GetDataReceivedAsync<TResponse>(message);
             }
             catch (Exception ex)
             {
@@ -123,7 +107,28 @@ namespace EdpConsole.Connectors.Usb
             }
         }
 
-        private async Task<ModbusResponse> GetDataReceivedAsync(ModbusMessage message)
+        private void SendMessage(ModbusMessage message)
+        {
+            if (_serialPort == null && message.Length == 0) return;
+
+            try
+            {
+                if (!IsOpen())
+                {
+                    Open();
+                }
+
+                //Console.WriteLine($"Message Sent: {message.ToHexString()}");
+
+                _serialPort.Write(message.Value, 0, message.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(SendMessage)}':{ex.Message}");
+            }
+        }
+
+        private async Task<ModbusResponse<TResponse>> GetDataReceivedAsync<TResponse>(ModbusMessage message)
         {
             try
             {
@@ -141,7 +146,7 @@ namespace EdpConsole.Connectors.Usb
                     }
                 }
 
-                return new ModbusResponse(message, dataReceived);
+                return new ModbusResponse<TResponse>(message, dataReceived);
             }
             catch (Exception ex)
             {

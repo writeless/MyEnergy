@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using EdpConsole.Connectors;
 using EdpConsole.Connectors.Usb;
 using EdpConsole.Core;
@@ -11,144 +12,61 @@ namespace EdpConsole
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.WriteLine("Start");
 
             //based in http://velocio.net/modbus-example/
-            SendMessageTest();
-
-            Console.ReadLine();
-
-            SendMessageTest();
+            SendMessageTest().Wait();
 
             Console.ReadLine();
         }
 
-        private static void SendMessageTest()
+        private async static Task SendMessageTest()
         {
-            ThreadPool.QueueUserWorkItem(x =>
+            //deixar como static no server, dai economiza com abertura e fechamento de conexao
+            using (IConnector conn = new UsbConnector())
             {
-                //01 - id
-                //var message = new byte[] { 0x01, 0x04, 0x00, 0x04, 0x00, 0x01 };
-                //0x01 0x04 0x06 0x56 0x30 0x31 0x31 0x30 0x00 0x67 0x92
+                conn.Open();
+                await conn.LoadConfiguration();
 
-                //02 - config
-                //var message = new byte[] { 0x01, 0x04, 0x00, 0x80, 0x00, 0x01 };
-                //response: 
-                //0x01 ADDRESS
-                //0x04 FUNCTION CODE
-                //0x08 BYTE COUNT
-                //0x01 0x02 0x09 0x0a 0x0b 0x0c 0x0d 0x0e  DATA
-                //0x19 0xea CRC
+                var date = await conn.GetRegistersAddressAsync<DateTime>(RegistersAddressMessage.Clock);
+                Console.WriteLine($"date: {date.Value}");
 
-                //clock
-                //0x07 0xe3 0x06 0x0d 0x04 0x01 0x00 0x00 0x00 0x00 0x3c 0x80 
-                //ARM Profile Status
-                //0x00 
-                //Active energy (+A) inc
-                //0x00 0x00 0x00 0x00 
-                //Active energy (-A) inc
-                //0x00 0x00 0x00 0x00 
-                //Reactive energy (+Ri) inc
-                //0x00 0x00 0x00 0x00 
-                //Reactive energy (+Rc) inc
-                //0x00 0x00 0x00 0x00 
-                //Reactive energy (-Ri) inc.
-                //0x00 0x00 0x00 0x00 
-                //Reactive energy (-Rc) inc.
-                //0x00 0x00 0x00 0x00
+                var data = await conn.GetLastEntriesAsync<uint>(MeasurementMessage.ActiveEnergyPositiveAInc, 1);
+                Console.WriteLine($"date: {data.Value}");
+
+                //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.ConfiguredMeasurements)}");
+                //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.CapturePeriod)}");
+                //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.EntriesInUse)}");
+                //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.ProfileEntries)}");
 
 
+                //21/05/2019 16:30:00
+                //var x = ModbusMessage.RegistersAddress.Clock;
+                //var response0 = conn.SendMessageAsync(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA, 1, 1)).Result;
+                //var initialDate = ToDate(response0.Data);
 
-                //0x07 0xe3 0x06 0x0d 0x04 0x01 0x0f 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x06 0x0d 0x04 0x01 0x00 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x06 0x0d 0x04 0x00 0x2d 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x06 0x0d 0x04 0x00 0x1e 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x06 0x0d 0x04 0x00 0x0f 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x06 0x0d 0x04 0x00 0x00 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+                //var response1 = conn.SendMessageAsync(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA, 1)).Result;
+                //var endDate = ToDate(response1.Data);
 
-                //Clock                                                       ARM  +A                  -A                  +Ri                 +Rc                 -Ri                 +Rc                  
-                //0x07 0xe3 0x05 0x15 0x02 0x10 0x1e 0x00 0x00 0x00 0x3c 0x80 0x0c 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x05 0x15 0x02 0x10 0x2d 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
-                //0x07 0xe3 0x05 0x15 0x02 0x11 0x00 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
-                //0x07 0xe3 0x05 0x15 0x02 0x11 0x0f 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
-                //0x07 0xe3 0x05 0x15 0x02 0x11 0x1e 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  
-                //0x07 0xe3 0x05 0x15 0x02 0x11 0x2d 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+                //var minutesIntervalBetweenEntries = 15;
+                //var totalLastEntries = 6;
+                //var totalEntries = (endDate - initialDate).TotalMinutes / minutesIntervalBetweenEntries - totalLastEntries;
 
-                //T1 T2 T3 Total
+                //var start = 1;// 583;//2230; //4539 registros sao feitos de 15 em 15 minutos, ele nao acessa os ultimos 6 registros
+                //for (int i = start; i <= start + 1*6; i += 6)
+                //{
+                //    var response = conn.SendMessageAsync(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA, i)).Result;
+                //    for (int j = 0; j < 6; j++)
+                //        Console.WriteLine($"===> Received: {ToDate(response.Data.Skip(j * 37).Take(12).ToArray()).ToString("dd/MM/yyyy HH:mm:ss")} | 0x{response.Data[15 + (j * 37)]:x2} | 0x{response.Data[16 + (j * 37)]:x2}");
+                //}
 
-                //03 - value
-                var message = new byte[] { 0x01, 0x44, 0x03, 0x01 };
-                //0x01 0x44 0x11 
-                //0x07 0xe3 0x06 0x0c 0x03 0x17 0x00 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 
-                //0x4b 0x7e
+                //var response2 = conn.SendMessageAsync(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA)).Result;
+                //for (int j = 0; j < 6; j++)
+                //    Console.WriteLine($"===> Received: {ToDate(response2.Data.Skip(j * 37).Take(12).ToArray()).ToString("dd/MM/yyyy HH:mm:ss")} | 0x{response2.Data[15 + (j * 37)]:x2} | 0x{response2.Data[16 + (j * 37)]:x2}");
 
-                //0x01 0x44 0x22 
-                //0x07 0xe3 0x06 0x0c 0x03 0x17 0x1e 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00 
-                //0x07 0xe3 0x06 0x0c 0x03 0x17 0x0f 0x00 0x00 0x00 0x3c 0x80 0x00 0x00 0x00 0x00 0x00
-                // 0x05 0x07
-
-                using (IConnector conn = new UsbConnector())
-                {
-                    //conn.DataReceived += Conn_DataReceived;
-
-                    //conn.SendMessage(ModbusMessage.StatusControl);
-                    //conn.SendMessage(ModbusMessage.Clock);
-                    //conn.SendMessage(ModbusMessage.ActiveCoreFirmwareId);
-                    //conn.SendMessage(ModbusMessage.LoadProfileConfiguredMeasurements);
-                    //conn.SendMessage(ModbusMessage.LoadProfileTotalEntries);
-                    //conn.SendMessage(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA));
-                    //conn.SendMessage(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA));
-
-                    //var response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
-                    //Console.WriteLine($"B Received: {response}");
-
-                    //response = conn.SendMessageAsync(ModbusMessage.Clock).Result;
-                    //Console.WriteLine($"B Received: {response}");
-
-                    //response = conn.SendMessageAsync(ModbusMessage.StatusControl).Result;
-                    //Console.WriteLine($"B Received: {response}");
-
-                    var date = conn.SendMessageAsync(RegistersAddressMessage.Clock).Result;
-                    Console.WriteLine($"date: {date.Value}");
-
-                    //21/05/2019 16:30:00
-                    //var x = ModbusMessage.RegistersAddress.Clock;
-                    //var response0 = conn.SendMessageAsync(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA, 1, 1)).Result;
-                    //var initialDate = ToDate(response0.Data);
-
-                    //var response1 = conn.SendMessageAsync(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA, 1)).Result;
-                    //var endDate = ToDate(response1.Data);
-
-                    //var minutesIntervalBetweenEntries = 15;
-                    //var totalLastEntries = 6;
-                    //var totalEntries = (endDate - initialDate).TotalMinutes / minutesIntervalBetweenEntries - totalLastEntries;
-
-                    //var start = 1;// 583;//2230; //4539 registros sao feitos de 15 em 15 minutos, ele nao acessa os ultimos 6 registros
-                    //for (int i = start; i <= start + 1*6; i += 6)
-                    //{
-                    //    var response = conn.SendMessageAsync(ModbusMessage.LoadProfile(MeasurementType.ActiveEnergyPositiveA, i)).Result;
-                    //    for (int j = 0; j < 6; j++)
-                    //        Console.WriteLine($"===> Received: {ToDate(response.Data.Skip(j * 37).Take(12).ToArray()).ToString("dd/MM/yyyy HH:mm:ss")} | 0x{response.Data[15 + (j * 37)]:x2} | 0x{response.Data[16 + (j * 37)]:x2}");
-                    //}
-
-                    //var response2 = conn.SendMessageAsync(ModbusMessage.LastLoadProfile(MeasurementType.ActiveEnergyPositiveA)).Result;
-                    //for (int j = 0; j < 6; j++)
-                    //    Console.WriteLine($"===> Received: {ToDate(response2.Data.Skip(j * 37).Take(12).ToArray()).ToString("dd/MM/yyyy HH:mm:ss")} | 0x{response2.Data[15 + (j * 37)]:x2} | 0x{response2.Data[16 + (j * 37)]:x2}");
-
-                }
-
-                return;
-            });
-        }
-
-        private static void Conn_DataReceived(IConnector sender, ModbusResponse response)
-        {
-            //TODO: fazer os converters das response para dados legiveis
-            //var year = BytesToInt(response.Data, 0, 2);
-
-            Console.WriteLine($"Data Received: {response}");
+            }
         }
     }
 }

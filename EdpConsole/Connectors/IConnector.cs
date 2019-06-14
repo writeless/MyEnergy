@@ -10,6 +10,13 @@ namespace EdpConsole.Connectors
 {
     public interface IConnector : IDisposable
     {
-        Task<ModbusResponse> SendMessageAsync(ModbusMessage message);
+        uint EntriesInUse { get; }
+        MeasurementConfiguration MeasurementConfiguration { get; }
+
+        void Open();
+
+        Task LoadConfiguration();
+
+        Task<ModbusResponse<TResponse>> SendMessageAsync<TResponse>(ModbusMessage message);
     }
 }

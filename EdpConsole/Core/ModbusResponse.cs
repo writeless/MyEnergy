@@ -6,7 +6,7 @@ using System.Text;
 
 namespace EdpConsole.Core
 {
-    public class ModbusResponse
+    public class ModbusResponse<TResponse>
     {
         public byte Address { get; }
 
@@ -16,7 +16,7 @@ namespace EdpConsole.Core
 
         public byte[] Data { get; }
 
-        public object Value { get; }
+        public TResponse Value { get; }
 
         public ModbusResponse(ModbusMessage request, List<byte> response)
         {
@@ -32,17 +32,58 @@ namespace EdpConsole.Core
             Value = BuildValue(request, Data);
         }
 
-        public object BuildValue(ModbusMessage request, byte[] data)
+        public TResponse BuildValue(ModbusMessage request, byte[] data)
         {
-            switch (request.RegistersAddressMessage)
+            switch (request.FunctionCode)
+            {
+                case FunctionCode.ReadRegistersAddress:
+                    return BuildRegistersAddressValue(request.RegistersAddress, data);
+
+                case FunctionCode.ReadLastEntries:
+                case FunctionCode.ReadEntries:
+                    return BuildMeasurementValue(request.Measurement, data);
+
+                case FunctionCode.None:
+                default:
+                    return default(TResponse);
+            }
+        }
+
+        private TResponse BuildRegistersAddressValue(RegistersAddressMessage registersAddress, byte[] data)
+        {
+            object result = null;
+
+            switch (registersAddress)
             {
                 case RegistersAddressMessage.Clock:
-                    return data.ToDateTime();
+                    result = data.ToDateTime();
+                    break;
+                case RegistersAddressMessage.ConfiguredMeasurements:
+                    result = new MeasurementConfiguration(data);
+                    break;
                 default:
+                    result = data.ToUInt32();
                     break;
             }
 
-            return null;
+            return (TResponse)result;
+        }
+
+        private TResponse BuildMeasurementValue(MeasurementMessage measurement, byte[] data)
+        {
+            object result = null;
+
+            switch (measurement)
+            {
+                case MeasurementMessage.Clock:
+                    result = data.ToDateTime();
+                    break;
+                default:
+                    result = data.ToUInt32();
+                    break;
+            }
+
+            return (TResponse)result;
         }
 
         public override string ToString()

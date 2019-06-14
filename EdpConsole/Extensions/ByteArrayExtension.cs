@@ -58,7 +58,7 @@ namespace EdpConsole.Extensions
 
         public static DateTime ToDateTime(this byte[] bytes)
         {
-            var year = bytes.ToInt(0, 2);
+            var year = bytes.ToInt32(0, 2);
             var month = (int)bytes[2];
             var day = (int)bytes[3];
             var hour = (int)bytes[5];
@@ -68,7 +68,7 @@ namespace EdpConsole.Extensions
             return new DateTime(year, month, day, hour, minute, second);
         }
 
-        public static int ToInt(this byte[] bytes, int start, int end)
+        public static int ToInt32(this byte[] bytes, int start = 0, int end = 2)
         {
             if (end - start == 1)
             {
@@ -87,6 +87,28 @@ namespace EdpConsole.Extensions
             else
             {
                 return BitConverter.ToInt32(data, 0);
+            }
+        }
+
+        public static uint ToUInt32(this byte[] bytes, int start = 0, int end = 2)
+        {
+            if (end - start == 1)
+            {
+                return (uint)bytes.Skip(start).Take(end).First();
+            }
+
+            var data = bytes.Skip(start).Take(end).ToArray();
+
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+
+            if (data.Length == 2)
+            {
+                return BitConverter.ToUInt16(data, 0);
+            }
+            else
+            {
+                return BitConverter.ToUInt32(data, 0);
             }
         }
     }
