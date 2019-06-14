@@ -25,17 +25,7 @@ namespace EdpConsole.Connectors.Usb
         private readonly Handshake _handshake;
 
         private SerialPort _serialPort;
-
-        private const int _dataSizeIndex = 2;
-        private const int _headerSize = 3;
-        private const int _crcSize = 2;
-        private List<byte> _dataReceived = new List<byte>();
-        private ModbusMessage _request;
-
-        private object lockObject = new object();
         private SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
-
-        public event ConnectorDataReceivedEventHandler DataReceived;
 
         public UsbConnector()
         {
@@ -78,7 +68,6 @@ namespace EdpConsole.Connectors.Usb
                 if (!_serialPort.IsOpen)
                 {
                     _serialPort.Open();
-                    _serialPort.DataReceived += SerialPortDataReceived;
                     Console.WriteLine($"Connection Open in Port {comPort}");
                 }
             }
@@ -88,7 +77,7 @@ namespace EdpConsole.Connectors.Usb
             }
         }
 
-        public void SendMessage(ModbusMessage message)
+        private void SendMessage(ModbusMessage message)
         {
             if (_serialPort == null && message.Length == 0) return;
 
@@ -101,7 +90,6 @@ namespace EdpConsole.Connectors.Usb
 
                 Console.WriteLine($"Message Sent: {message.ToHexString()}");
 
-                _request = message;
                 _serialPort.Write(message.Value, 0, message.Length);
             }
             catch (Exception ex)
@@ -122,7 +110,7 @@ namespace EdpConsole.Connectors.Usb
 
                 SendMessage(message);
 
-                return await GetDataReceivedAsync();
+                return await GetDataReceivedAsync(message);
             }
             catch (Exception ex)
             {
@@ -135,32 +123,30 @@ namespace EdpConsole.Connectors.Usb
             }
         }
 
-        private async Task<ModbusResponse> GetDataReceivedAsync()
+        private async Task<ModbusResponse> GetDataReceivedAsync(ModbusMessage message)
         {
             try
             {
+                 var dataReceived = new List<byte>();
+
                 //TODO: criar um timeout
-                while (HasDataToReceive())
+                while (HasDataToReceive(dataReceived))
                 {
                     var dataSize = _serialPort.BytesToRead;
                     if (dataSize > 0)
                     {
                         var data = new byte[dataSize];
                         await _serialPort.BaseStream.ReadAsync(data, 0, dataSize);
-                        _dataReceived.AddRange(data);
+                        dataReceived.AddRange(data);
                     }
                 }
 
-                return new ModbusResponse(_request, _dataReceived);
+                return new ModbusResponse(message, dataReceived);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(SendMessageAsync)}':{ex.Message}");
                 return null;
-            }
-            finally
-            {
-                _dataReceived = new List<byte>();
             }
         }
 
@@ -184,42 +170,17 @@ namespace EdpConsole.Connectors.Usb
             }
         }
 
-        private void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
+        private bool HasDataToReceive(List<byte> dataReceived)
         {
-            var serialPort = sender as SerialPort;
-            if (serialPort == null || DataReceived == null || DataReceived.GetInvocationList().Length == 0) return;
+            int dataLengthIndex = 2;
+            int headerSize = 3;
+            int crcSize = 2;
 
-            try
-            {
-                lock (lockObject)
-                {
-                    var dataSize = serialPort.BytesToRead;
-                    var data = new byte[dataSize];
-                    serialPort.Read(data, 0, dataSize);
-
-                    _dataReceived.AddRange(data);
-
-                    Console.WriteLine($"Raw Data Received: {data.ToHexString()}");
-
-                    if (!HasDataToReceive())
-                    {
-                        var response = new ModbusResponse(_request, _dataReceived);
-                        DataReceived(this, response);
-                        _dataReceived = new List<byte>();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(SerialPortDataReceived)}':{ex.Message}");
-            }
-        }
-
-        private bool HasDataToReceive()
-        {
             //TODO: em mensagens do tipo 0x44 e 0x45 considerar mais 12 bytes, pois não são contabilizados no bytecount
             //atenção pois pode ser requisitado mais de 1 registro, e neste caso talvez tenha que contabilizar a quantidade de registros vezes 12 bytes
-            return !(_dataReceived.Count > _dataSizeIndex && (int)_dataReceived[_dataSizeIndex] == _dataReceived.Count - _crcSize - _headerSize);
+            var hasDataLength = dataReceived.Count > dataLengthIndex;
+            var dataLength = dataReceived.Count - crcSize - headerSize;
+            return !(hasDataLength && dataReceived[dataLengthIndex] == dataLength);
         }
 
         private string GetUsbCOMPort()

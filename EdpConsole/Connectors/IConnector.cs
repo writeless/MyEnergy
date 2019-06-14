@@ -10,10 +10,6 @@ namespace EdpConsole.Connectors
 {
     public interface IConnector : IDisposable
     {
-        event ConnectorDataReceivedEventHandler DataReceived;
-
-        void SendMessage(ModbusMessage message);
-
         Task<ModbusResponse> SendMessageAsync(ModbusMessage message);
     }
 }
