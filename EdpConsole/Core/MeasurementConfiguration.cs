@@ -62,39 +62,61 @@ namespace EdpConsole.Core
             //TODO:
             return (uint)Values.Where(v => types.Contains(v.Key)).Select(v => (decimal)v.Value).Sum();
         }
+
+        public override string ToString()
+        {
+            var values = "";
+
+            foreach (var key in Values.Keys)
+            {
+                values += $" | {key.ToString().Substring(0,1)}: {Values[key]}";
+            }
+
+            return $"{Clock.ToString("dd/MM/yyyy HH:mm:ss")}" + values;
+        }
     }
 
     public class Measurements : IEnumerable<Measurement>
     {
-        private List<Measurement> measurements;
+        private List<Measurement> _measurements;
+
+        public Measurements()
+        {
+            _measurements = new List<Measurement>();
+        }
 
         public Measurements(MeasurementConfiguration config, int length, byte[] data)
         {
-            measurements = new List<Measurement>();
+            _measurements = new List<Measurement>();
             var dataLength = data.Length / length;
 
             for (int i = 0; i < length; i++)
             {
                 var measurementData = data.Skip(i * dataLength).Take(dataLength).ToArray();
                 var measurement = new Measurement(config, measurementData);
-                measurements.Add(measurement);
+                _measurements.Add(measurement);
             }
         }
 
         public IEnumerator<Measurement> GetEnumerator()
         {
-            return measurements.GetEnumerator();
+            return _measurements.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return measurements.GetEnumerator();
+            return _measurements.GetEnumerator();
         }
 
         public uint SumByType(List<MeasurementType> types)
         {
             //TODO:
-            return (uint)measurements.Select(v => (decimal)v.SumByType(types)).Sum();
+            return (uint)_measurements.Select(v => (decimal)v.SumByType(types)).Sum();
+        }
+
+        public void AddRange(Measurements measurements)
+        {
+            _measurements.AddRange(measurements);
         }
     }
 }

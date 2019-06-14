@@ -14,10 +14,13 @@ namespace EdpConsole
     {
         public static void Main(string[] args)
         {
+            var startTime = DateTime.Now;
             Console.WriteLine("Start");
 
             //based in http://velocio.net/modbus-example/
             SendMessageTest().Wait();
+
+            Console.WriteLine("Tempo: " + (DateTime.Now - startTime).TotalMilliseconds);
 
             Console.ReadLine();
         }
@@ -33,11 +36,11 @@ namespace EdpConsole
                 var date = await conn.GetRegistersAddressAsync<DateTime>(RegistersAddressMessage.Clock);
                 Console.WriteLine($"date: {date.Value}");
 
-                var data = await conn.GetLastEntriesAsync(6);
-                Console.WriteLine($"date: {data.Value}");
+                //var data = await conn.GetLastEntriesAsync(6);
+                //Console.WriteLine($"date: {data}");
 
-                var data2 = await conn.GetLastEnergyConsumeAsync(6);
-                Console.WriteLine($"date: {data2}");
+                var data2 = await conn.GetLastEnergyConsumeAsync();
+                Console.WriteLine($"TOTAL: {data2}");
 
                 //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.ConfiguredMeasurements)}");
                 //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.CapturePeriod)}");

@@ -1,6 +1,7 @@
 ﻿using EdpConsole.Connectors;
 using EdpConsole.Core;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,19 +16,44 @@ namespace EdpConsole.Extensions
             return await conn.SendMessageAsync<TResponse>(message);
         }
 
-        public static async Task<ModbusResponse<Measurements>> GetLastEntriesAsync(this IConnector conn, int resultLength)
+        public static async Task<Measurements> GetLastEntriesAsync(this IConnector conn, int resultLength = 6)
         {
             var message = ModbusMessage.BuildGetLastEntriesMessage(resultLength);
-            return await conn.SendMessageAsync<Measurements>(message);
+            return (await conn.SendMessageAsync<Measurements>(message)).Value;
         }
 
-        public static async Task<UInt32> GetLastEnergyConsumeAsync(this IConnector conn, int resultLength)
+        public static async Task<Measurements> GetEntriesAsync(this IConnector conn, int resultLength)
+        {
+            var parcelLength = 6;
+            var start = (int)conn.EntriesInUse + 1;
+            var measurements = new Measurements();
+
+            for (int i = 0; i < resultLength / parcelLength; i++)
+            {
+                start = start - parcelLength;
+                var message = ModbusMessage.BuildGetEntriesMessage(parcelLength, start);
+                measurements.AddRange((await conn.SendMessageAsync<Measurements>(message)).Value);
+            }
+
+            return measurements;
+
+            //TODO: tamanho de acordo com o resultLength
+            //var start = 1;// (int)conn.EntriesInUse - 7;
+            //var message = ModbusMessage.BuildGetEntriesMessage(resultLength, start);
+            //return await conn.SendMessageAsync<Measurements>(message);
+        }
+
+        public static async Task<UInt32> GetLastEnergyConsumeAsync(this IConnector conn)
         {
             var energyTypes = conn.MeasurementConfiguration.AllEnergies();
-            var message = ModbusMessage.BuildGetLastEntriesMessage(resultLength);
-            var measurements = await conn.SendMessageAsync<Measurements>(message);
+            var measurements = await conn.GetEntriesAsync(96); //96 são os dados de 1 dia inteiro
 
-            return measurements.Value.SumByType(energyTypes);
+            foreach (var m in measurements.OrderByDescending(e => e.Clock))
+            {
+                Console.WriteLine(m);
+            }
+
+            return measurements.SumByType(energyTypes);
         }
 
 

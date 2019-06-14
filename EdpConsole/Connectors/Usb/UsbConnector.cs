@@ -135,6 +135,8 @@ namespace EdpConsole.Connectors.Usb
                  var dataReceived = new List<byte>();
 
                 //TODO: criar um timeout
+                var timeout = 5000;
+                var startTime = DateTime.Now;
                 while (HasDataToReceive(dataReceived))
                 {
                     var dataSize = _serialPort.BytesToRead;
@@ -143,6 +145,11 @@ namespace EdpConsole.Connectors.Usb
                         var data = new byte[dataSize];
                         await _serialPort.BaseStream.ReadAsync(data, 0, dataSize);
                         dataReceived.AddRange(data);
+                    }
+
+                    if ((DateTime.Now - startTime).TotalMilliseconds > timeout)
+                    {
+                        throw new Exception("timeout");
                     }
                 }
 

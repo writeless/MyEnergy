@@ -68,7 +68,7 @@ namespace EdpConsole.Extensions
             return new DateTime(year, month, day, hour, minute, second);
         }
 
-        public static int ToInt32(this byte[] bytes, int start = 0, int end = 2)
+        public static int ToInt32(this byte[] bytes, int start = 0, int end = 4)
         {
             if (end - start == 1)
             {
@@ -90,7 +90,7 @@ namespace EdpConsole.Extensions
             }
         }
 
-        public static uint ToUInt32(this byte[] bytes, int start = 0, int end = 2)
+        public static uint ToUInt32(this byte[] bytes, int start = 0, int end = 4)
         {
             if (end - start == 1)
             {
