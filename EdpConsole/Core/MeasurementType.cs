@@ -4,7 +4,8 @@ using System.Text;
 
 namespace EdpConsole.Core
 {
-    public enum MeasurementMessage : byte
+    //TODO: volta a se chamar tType
+    public enum MeasurementType : byte
     {
         Clock = 0x01,
         AMRProfileStatus = 0x02,

@@ -18,11 +18,14 @@ namespace EdpConsole.Core
 
         public TResponse Value { get; }
 
-        public ModbusResponse(ModbusMessage request, List<byte> response)
+        public MeasurementConfiguration MeasurementConfiguration { get; }
+
+        public ModbusResponse(MeasurementConfiguration config, ModbusMessage request, List<byte> response)
         {
             Address = response[0];
             FunctionCode = (FunctionCode)response[1];
             ByteCount = (int)response[2];
+            MeasurementConfiguration = config;
 
             Data = response
                     .Take(response.Count - 2)
@@ -41,7 +44,7 @@ namespace EdpConsole.Core
 
                 case FunctionCode.ReadLastEntries:
                 case FunctionCode.ReadEntries:
-                    return BuildMeasurementValue(request.Measurement, data);
+                    return BuildMeasurementValue(request.ResultLength, data);
 
                 case FunctionCode.None:
                 default:
@@ -69,19 +72,9 @@ namespace EdpConsole.Core
             return (TResponse)result;
         }
 
-        private TResponse BuildMeasurementValue(MeasurementMessage measurement, byte[] data)
+        private TResponse BuildMeasurementValue(int resultLength, byte[] data)
         {
-            object result = null;
-
-            switch (measurement)
-            {
-                case MeasurementMessage.Clock:
-                    result = data.ToDateTime();
-                    break;
-                default:
-                    result = data.ToUInt32();
-                    break;
-            }
+            object result = new Measurements(MeasurementConfiguration, resultLength, data);
 
             return (TResponse)result;
         }

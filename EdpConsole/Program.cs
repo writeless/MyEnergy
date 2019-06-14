@@ -33,8 +33,11 @@ namespace EdpConsole
                 var date = await conn.GetRegistersAddressAsync<DateTime>(RegistersAddressMessage.Clock);
                 Console.WriteLine($"date: {date.Value}");
 
-                var data = await conn.GetLastEntriesAsync<uint>(MeasurementMessage.ActiveEnergyPositiveAInc, 1);
+                var data = await conn.GetLastEntriesAsync(6);
                 Console.WriteLine($"date: {data.Value}");
+
+                var data2 = await conn.GetLastEnergyConsumeAsync(6);
+                Console.WriteLine($"date: {data2}");
 
                 //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.ConfiguredMeasurements)}");
                 //Console.WriteLine($"xxx: {await conn.GetRegistersAddressAsync(RegistersAddressMessage.CapturePeriod)}");

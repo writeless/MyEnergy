@@ -28,7 +28,7 @@ namespace EdpConsole.Core
                 quantityInputRegisters[1]);
         }
 
-        public static ModbusMessage BuildGetLastEntriesMessage(MeasurementMessage measurement, int resultLength)
+        public static ModbusMessage BuildGetLastEntriesMessage(int resultLength)
         {
             var address = (byte)0x01;
             var functionCode = FunctionCode.ReadLastEntries;
@@ -36,14 +36,14 @@ namespace EdpConsole.Core
 
             return new ModbusMessage(
                 functionCode,
-                measurement,
+                resultLength,
                 address,
                 (byte)functionCode,
                 allMeasurement,
                 (byte)resultLength);
         }
 
-        public static ModbusMessage BuildGetEntriesMessage(MeasurementMessage measurement, int resultLength, int start = 1)
+        public static ModbusMessage BuildGetEntriesMessage(int resultLength, int start = 1)
         {
             var startInBytes = BitConverter.GetBytes(start);
 
@@ -56,7 +56,7 @@ namespace EdpConsole.Core
 
             return new ModbusMessage(
                 functionCode,
-                measurement,
+                resultLength,
                 address,
                 (byte)functionCode,
                 allMeasurement,
@@ -73,7 +73,7 @@ namespace EdpConsole.Core
 
         public RegistersAddressMessage RegistersAddress { get; }
 
-        public MeasurementMessage Measurement { get; }
+        public int ResultLength { get; }
 
         public int Length { get { return Value.Length; } }
 
@@ -84,11 +84,11 @@ namespace EdpConsole.Core
             RegistersAddress = registersAddress;
         }
 
-        public ModbusMessage(FunctionCode functionCode, MeasurementMessage measurement, params byte[] message)
+        public ModbusMessage(FunctionCode functionCode, int resultLength, params byte[] message)
         {
             Value = message.WithCRC();
             FunctionCode = functionCode;
-            Measurement = measurement;
+            ResultLength = resultLength;
         }
 
         public string ToHexString()

@@ -146,7 +146,7 @@ namespace EdpConsole.Connectors.Usb
                     }
                 }
 
-                return new ModbusResponse<TResponse>(message, dataReceived);
+                return new ModbusResponse<TResponse>(MeasurementConfiguration, message, dataReceived);
             }
             catch (Exception ex)
             {
