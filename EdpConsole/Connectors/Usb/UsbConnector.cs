@@ -135,7 +135,7 @@ namespace EdpConsole.Connectors.Usb
                 var dataReceived = new List<byte>();
 
                 //TODO: criar um timeout
-                var timeout = 60 * 1000;
+                var timeout = 2 * 1000;
                 var startTime = DateTime.Now;
                 while (HasDataToReceive(dataReceived))
                 {

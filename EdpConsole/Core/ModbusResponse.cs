@@ -1,5 +1,4 @@
 ﻿using EdpConsole.Extensions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -61,11 +60,28 @@ namespace EdpConsole.Core
                 case RegistersAddressMessage.Clock:
                     result = data.ToDateTime();
                     break;
+
                 case RegistersAddressMessage.ConfiguredMeasurements:
                     result = new MeasurementConfiguration(data);
                     break;
+
+                case RegistersAddressMessage.DemandManagementStatus:
+                    result = (DemandManagementStatus)data.ToUInt32();
+                    break;
+
+                case RegistersAddressMessage.DemandManagementPeriodDefinition:
+                    result = new DemandManagementPeriodDefinition(data);
+                    break;
+
                 default:
-                    result = data.ToUInt32();
+                    if (typeof(TResponse) == typeof(string))
+                    {
+                        result = Encoding.Default.GetString(data);
+                    }
+                    else
+                    {
+                        result = data.ToUInt32();
+                    }
                     break;
             }
 

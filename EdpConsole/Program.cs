@@ -98,13 +98,54 @@ namespace EdpConsole
 
                 while (true)
                 {
-                    var consume = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousActivePowerSumAllPhases);
-                    Console.WriteLine($"consume: {consume.Value}");
+                    //var consume = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousActivePowerPositiveSumAllPhases);
+                    //Console.WriteLine($"cons: {consume?.Value}");
 
-                    var power = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousPowerFactor);
-                    Console.WriteLine($"power: {power.Value}");
+                    //var power = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousPowerFactor);
+                    //Console.WriteLine($"powe: {power?.Value}");
 
-                    await SendDataToServer((int)consume.Value, (int)power.Value);
+                    //var volt = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousVoltageL1);
+                    //Console.WriteLine($"volt: {volt?.Value}");
+
+                    //var curr = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousCurrentL1);
+                    //Console.WriteLine($"curr: {curr?.Value}");
+
+                    //var freq = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.InstantaneousFrequency);
+                    //Console.WriteLine($"freq: {freq?.Value}");
+                    //Console.WriteLine($"");
+
+                    //for (int i = 0x26; i <= 0x6B; i++)
+                    //{
+                    //    //if (System.Enum.IsDefined(typeof(RegistersAddressMessage), (byte)i))
+                    //    {
+                    //        var freq = await conn.GetRegistersAddressAsync<uint>((RegistersAddressMessage)i);
+                    //        Console.WriteLine($"{i:x2}: {freq?.Value}");
+                    //    }
+                    //}
+
+                    var xx = new byte[] { 0x02, 0x03, 0x04, 0x05, 0x06, 0x09, 0x0A };
+                    foreach (var i in xx)
+                    {
+                        var freq = await conn.GetRegistersAddressAsync<string>((RegistersAddressMessage)i);
+                        Console.WriteLine($"{i:x2}: {freq?.Value}");
+                    }
+
+                    //Demand
+                    {
+                        var status = await conn.GetRegistersAddressAsync<DemandManagementStatus>(RegistersAddressMessage.DemandManagementStatus);
+                        Console.WriteLine($"volt: {status?.Value}");
+
+                        var definition = await conn.GetRegistersAddressAsync<DemandManagementPeriodDefinition>(RegistersAddressMessage.DemandManagementPeriodDefinition);
+                        Console.WriteLine($"curr: {definition?.Value}");
+
+                        var residualPower = await conn.GetRegistersAddressAsync<uint>(RegistersAddressMessage.ResidualPowerThreshold);
+                        Console.WriteLine($"freq: {residualPower?.Value}");
+                    }
+
+                    Console.ReadLine();
+                    Console.WriteLine($"");
+
+                    //await SendDataToServer((int)consume.Value, (int)power.Value);
 
                     Thread.Sleep(2000);
                 }
