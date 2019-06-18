@@ -1,12 +1,12 @@
-﻿using System;
+﻿using EdpConsole.Core;
+using EdpConsole.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
-using EdpConsole.Core;
-using EdpConsole.Extensions;
 
 namespace EdpConsole.Connectors.Usb
 {
@@ -132,10 +132,10 @@ namespace EdpConsole.Connectors.Usb
         {
             try
             {
-                 var dataReceived = new List<byte>();
+                var dataReceived = new List<byte>();
 
                 //TODO: criar um timeout
-                var timeout = 5000;
+                var timeout = 60 * 1000;
                 var startTime = DateTime.Now;
                 while (HasDataToReceive(dataReceived))
                 {
@@ -161,7 +161,6 @@ namespace EdpConsole.Connectors.Usb
                 return null;
             }
         }
-
 
         private bool IsOpen()
         {
