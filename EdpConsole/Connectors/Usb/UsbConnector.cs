@@ -39,7 +39,7 @@ namespace EdpConsole.Connectors.Usb
             _handshake = handshake;
         }
 
-        public void Open()
+        public async Task<bool> Open()
         {
             try
             {
@@ -49,29 +49,49 @@ namespace EdpConsole.Connectors.Usb
                 }
 
                 //TODO: poderia ser feito um teste na conexao para ter certeza que a porta é uma comunicacao com o medidor
-                var comPort = GetUsbCOMPort();
+                var comPort = await GetCOMPort();
 
                 if (comPort == null)
                 {
-                    return;
+                    return false;
                 }
 
-                _serialPort = new SerialPort(comPort, _baudRate, _parity, _dataBits, _stopBits);
-                _serialPort.Handshake = _handshake;
+                _serialPort = BuildSerialPort(comPort);
+                _serialPort.Open();
+                await LoadConfiguration();
 
-                if (!_serialPort.IsOpen)
-                {
-                    _serialPort.Open();
-                    Console.WriteLine($"Connection Open in Port {comPort}");
-                }
+                Console.WriteLine($"Connection Open in Port {comPort}");
+                return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(Open)}':{ex.Message}");
+                return false;
             }
         }
 
-        public async Task LoadConfiguration()
+        private SerialPort BuildSerialPort(string comPort)
+        {
+            var serialPort = new SerialPort(comPort, _baudRate, _parity, _dataBits, _stopBits);
+            serialPort.Handshake = _handshake;
+            return serialPort;
+        }
+
+        private async Task CheckDevice(string comPort)
+        {
+            if (IsOpen())
+            {
+                Close();
+            }
+
+            _serialPort = BuildSerialPort(comPort);
+            _serialPort.Open();
+
+            //Check if device is a smart meter
+            MeasurementConfiguration = (await ConnectorExtensions.GetRegistersAddressAsync<MeasurementConfiguration>(this, RegistersAddressMessage.ConfiguredMeasurements)).Value;
+        }
+
+        private async Task LoadConfiguration()
         {
             MeasurementConfiguration = (await ConnectorExtensions.GetRegistersAddressAsync<MeasurementConfiguration>(this, RegistersAddressMessage.ConfiguredMeasurements)).Value;
             EntriesInUse = (await ConnectorExtensions.GetRegistersAddressAsync<uint>(this, RegistersAddressMessage.EntriesInUse)).Value;
@@ -173,7 +193,6 @@ namespace EdpConsole.Connectors.Usb
             {
                 _serialPort.Close();
                 _serialPort.Dispose();
-                Console.WriteLine("Connection Close");
             }
             catch (Exception ex)
             {
@@ -194,7 +213,7 @@ namespace EdpConsole.Connectors.Usb
             return !(hasDataLength && dataReceived[dataLengthIndex] == dataLength);
         }
 
-        private string GetUsbCOMPort()
+        private async Task<string> GetCOMPort()
         {
             try
             {
@@ -215,19 +234,33 @@ namespace EdpConsole.Connectors.Usb
                     }
                 }
 
-                var portNames = SerialPort.GetPortNames().ToList();
-                var result = usbPorts.FirstOrDefault(x => portNames.Contains(x));
+                var comPorts = SerialPort.GetPortNames().ToList();
+                var portsToTry = usbPorts.Where(x => comPorts.Contains(x)).ToList();
+                portsToTry.AddRange(comPorts.Except(portsToTry));
 
-                if (string.IsNullOrWhiteSpace(result))
+                using (var conn = new UsbConnector())
                 {
-                    Console.WriteLine($"Warning in '{nameof(UsbConnector)}.{nameof(GetUsbCOMPort)}': USB serial port not found");
+                    foreach (var portToTry in portsToTry)
+                    {
+                        try
+                        {
+                            Console.WriteLine($"Try port {portToTry}");
+                            await conn.CheckDevice(portToTry);
+                            return portToTry;
+                        }
+                        catch
+                        {
+                        }
+                    }
                 }
 
-                return result;
+                Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(GetCOMPort)}': serial port not found");
+
+                return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(GetUsbCOMPort)}':{ex.Message}");
+                Console.WriteLine($"Error in '{nameof(UsbConnector)}.{nameof(GetCOMPort)}':{ex.Message}");
                 return string.Empty;
             }
         }

@@ -93,8 +93,14 @@ namespace EdpConsole
             //deixar como static no server, dai economiza com abertura e fechamento de conexao
             using (IConnector conn = new UsbConnector())
             {
-                conn.Open();
-                await conn.LoadConfiguration();
+                var isOpen = await conn.Open();
+
+                if (!isOpen)
+                {
+                    Console.WriteLine("Connection fail");
+                    Console.ReadLine();
+                    return;
+                }
 
                 while (true)
                 {
